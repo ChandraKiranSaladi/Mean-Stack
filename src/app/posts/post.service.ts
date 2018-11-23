@@ -2,6 +2,7 @@ import { Post } from './post.model';
 import { Injectable } from '@angular/core';
 import {Subject} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
+import { map } from 'rxjs/operators';
 
 @Injectable({providedIn: 'root'})
 export class PostService {
@@ -13,9 +14,18 @@ export class PostService {
 
   getPosts() {
 
-    this.http.get<{message: String, posts: Post[]}>('http://localhost:3000/api/posts')
-      .subscribe((data) => {
-        this.posts = data.posts;
+    this.http.get<{message: String, posts: any}>('http://localhost:3000/api/posts')
+      .pipe(map((postData) => {
+          return postData.posts.map(post => {
+            return {
+              id: post._id,
+              title: post.title,
+              content: post.content
+            };
+          });
+      }))
+      .subscribe((transformedData) => {
+        this.posts = transformedData;
         this.postUpdated.next([...this.posts]);
       });
   }
@@ -23,13 +33,23 @@ export class PostService {
   getPostUpdateListener() {
     return this.postUpdated.asObservable();
   }
+
   addPost(title: string, content: string) {
-    this.posts.push({
+    const post: Post = {
       id: null,
       title: title,
       content: content
-    });
+    };
+    console.log(`addpost: ${post}`);
+    this.http.post<{message: string, postId: string }>('http://localhost:3000/api/posts', post)
+      .subscribe((responseData) => {
+          console.log(responseData);
+          const id = responseData.postId;
+          post.id = id;
+          this.posts.push(post);
+          this.postUpdated.next([...this.posts]);
+      });
 
-    this.postUpdated.next([...this.posts]);
+
   }
 }

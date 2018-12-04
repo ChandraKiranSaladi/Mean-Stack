@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
@@ -11,6 +12,8 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(bodyParser.json());
 
+// very useful to expose one folder to the world
+app.use("/images",express.static(path.join("backend/images")));
 
 mongoose.connect(mongoURI, {
     useNewUrlParser: true
